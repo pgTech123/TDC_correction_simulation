@@ -8,13 +8,11 @@ NUMBER_OF_TDC = 256
 ########################################################
 
 
-class TransferFunctionICSSHSR4:
-    def __init__(self, transfer_function_ideal, algorithm="linear_regression"):
+class TransferFunctionICYSHSR1:
+    def __init__(self, transfer_function_ideal, algorithm="lookup_coarse"):
         self.transfer_function_ideal = transfer_function_ideal
-        if algorithm == "linear_regression":
-            self._linear_regression_algorithm()
-        elif algorithm == "median":
-            self._median_algorithm()
+        if algorithm == "lookup_coarse":
+            self._lookup_table_coarse()
         else:
             raise Exception("Invalid algorithm")
 
@@ -33,7 +31,7 @@ class TransferFunctionICSSHSR4:
         return [copy.deepcopy(self.x), copy.deepcopy(self.y_tf)]
 
     def evaluate(self, coarse, fine, tdc):
-        return coarse * self.coarse_period[tdc] + fine * self.fine_period[tdc]
+        return coarse * self.coarse_period[tdc] + self.coarse_lookup_table[tdc, coarse] + fine * self.fine_period[tdc]
 
     #######################################################################
     #                      PRIVATE FUNCTIONS
@@ -61,40 +59,58 @@ class TransferFunctionICSSHSR4:
         parameters = np.dot(mult_A_t_A_inv, mult_A_t_Y)
         return parameters[:, 0]
 
-    def _linear_regression_algorithm(self):
+    def _lookup_table_coarse(self):
         self.active_tdc = self.transfer_function_ideal.get_active_tdc()
         max_fine = self.transfer_function_ideal.get_max_fine()
+        max_coarse = self.transfer_function_ideal.get_max_coarse()
+        fine_count_per_coarse = self.transfer_function_ideal.get_fine_count_per_coarse()
         [x, raw_data] = self.transfer_function_ideal.get_transfer_functions_raw_data()
 
         self.coarse_period = np.zeros(NUMBER_OF_TDC)
+        self.coarse_lookup_table = np.zeros((NUMBER_OF_TDC, 2**4))
         self.fine_period = np.zeros(NUMBER_OF_TDC)
         for tdc in range(NUMBER_OF_TDC):
             if tdc not in self.active_tdc:
                 continue
+            # Do a linear regression for every coarse, then average it
+            slopes = []
+            bias = []
+            for coarse in range(max_coarse[tdc]):
+                number_of_fine = max_fine[tdc]
+                current_data = raw_data[tdc][coarse*number_of_fine:(coarse+1)*number_of_fine]
+                parameters = self._linear_regression(current_data)
+                if parameters is None:
+                    continue
+                a = parameters[0]
+                b = parameters[1]
+                slopes.append(a)
+                bias.append(b)
+            average_slope = np.average(np.array(slopes))
+
             parameters = self._linear_regression(raw_data[tdc])
             if parameters is None:
                 continue
             a = parameters[0]
             b = parameters[1]
-            median_step = self._get_median_step(raw_data[tdc])
-            self.fine_period[tdc] = np.around(median_step)  # The height of the median step seems to be a good approximation.
+            self.fine_period[tdc] = np.around(average_slope)  # The height of the median step seems to be a good approximation.
             self.coarse_period[tdc] = np.around(a*max_fine[tdc])
+            self._fill_lookup_table_coarse(raw_data[tdc], tdc, max_fine, max_coarse)
+
         self._compute_transfer_function_y(x)
 
-    def _median_algorithm(self):
-        self.active_tdc = self.transfer_function_ideal.get_active_tdc()
-        ps_per_coarse = self.transfer_function_ideal.get_ps_per_coarse()
-        [x, raw_data] = self.transfer_function_ideal.get_transfer_functions_raw_data()
-
-        self.coarse_period = np.zeros(NUMBER_OF_TDC)
-        self.fine_period = np.zeros(NUMBER_OF_TDC)
-        for i in range(NUMBER_OF_TDC):
-            if i not in self.active_tdc:
-                continue
-            median_step = self._get_median_step(raw_data[i])
-            self.fine_period[i] = np.around(median_step)  # The height of the median step seems to be a good approximation.
-            self.coarse_period[i] = np.around(ps_per_coarse[i])
-        self._compute_transfer_function_y(x)
+    def _fill_lookup_table_coarse(self, y_tf, tdc, max_fine, max_coarse):
+        if max_coarse[tdc] == 0:
+            return
+        for coarse in range(max_coarse[tdc]):
+            coarse_len = max_fine[tdc]
+            cur_coarse_data_ideal = y_tf[coarse*coarse_len:(coarse+1)*coarse_len-1]
+            # Get average offset between approx and real
+            difference = []
+            for fine, ideal_value in zip(range(len(cur_coarse_data_ideal)), cur_coarse_data_ideal):
+                difference.append(ideal_value - self.evaluate(coarse, fine, tdc))
+            average = np.average(np.array(difference))
+            print(round(average))
+            self.coarse_lookup_table[tdc, coarse] = round(average)     # - self.coarse_period[tdc]*(coarse+0.5)
 
     def _compute_transfer_function_y(self, x):
         y_tf = []

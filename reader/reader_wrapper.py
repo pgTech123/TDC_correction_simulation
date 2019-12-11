@@ -83,17 +83,16 @@ def get_histogram_np(filename):
         if max_coarse == 0 or max_fine == 0:
             print("Invalid max_coarse: " + str(max_coarse) + " or max fine: " + str(max_fine) + " found")
             continue
-        hist_list[address] = np.zeros(shape=(max_fine*max_coarse))
-        fine_count_per_coarse[address] = np.zeros(shape=(max_coarse))
+        hist_list[address] = np.zeros(shape=((max_fine+1)*(max_coarse+1)))
+        fine_count_per_coarse[address] = np.zeros(shape=(max_coarse+1))
         max_coarse_all[address] = max_coarse
         max_fine_all[address] = max_fine
 
         # Fill the array
         for coarse in h[1]:
             sum_fine_count = 0
-            #print(coarse)
             for fine in coarse[1]:
-                hist_list[address][(coarse[0]-1)*(max_fine-1) + fine[0]-1] = fine[1]
+                hist_list[address][coarse[0]*max_fine + fine[0]] = fine[1]
                 sum_fine_count += fine[1]
-            fine_count_per_coarse[address][coarse[0]-1] = sum_fine_count
+            fine_count_per_coarse[address][coarse[0]] = sum_fine_count
     return hist_list, max_coarse_all, max_fine_all, fine_count_per_coarse
