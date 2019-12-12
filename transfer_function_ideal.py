@@ -14,7 +14,8 @@ OUTLIER_THRESHOLD = 0.02
 
 class TransferFunctionIdeal:
     # Everything computation related should be called from the constructor
-    def __init__(self, filename):
+    def __init__(self, filename, tf_starts_at_origin=True):
+        self.tf_starts_at_origin = tf_starts_at_origin
         histogram_np, max_coarses, self.max_fines, self.fine_count_per_coarse_raw = reader.get_histogram_np(filename)
         self.histograms = self.filter_histogram(histogram_np)
         self.compute_transfer_function()
@@ -155,8 +156,10 @@ class TransferFunctionIdeal:
 
 
     def calcDNL_INL_TF(self, tot_Hist, fine_per_coarse, coarse_period):
+        tot_Hist = np.array(tot_Hist)
         res_fine = coarse_period / fine_per_coarse
-
+        if tot_Hist.size != 0 and self.tf_starts_at_origin:
+            tot_Hist = np.insert(tot_Hist, 0, 0)
         dnl = ((tot_Hist - np.mean(tot_Hist)) / np.mean(tot_Hist)) * res_fine
         inl = np.cumsum(dnl)
         tf = np.cumsum(res_fine + dnl)

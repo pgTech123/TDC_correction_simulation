@@ -12,7 +12,7 @@ class TransferFunctionICSSHSR4:
     def __init__(self, transfer_function_ideal, algorithm="linear_regression"):
         self.transfer_function_ideal = transfer_function_ideal
         if algorithm == "linear_regression":
-            self._linear_regression_algorithm()
+            self._linear_regression_algorithm2()
         elif algorithm == "median":
             self._median_algorithm()
         else:
@@ -61,6 +61,16 @@ class TransferFunctionICSSHSR4:
         parameters = np.dot(mult_A_t_A_inv, mult_A_t_Y)
         return parameters[:, 0]
 
+    @staticmethod
+    def linear_regression_force_origin(y_tf):
+        number_of_points = len(y_tf)
+        if number_of_points < 5:
+            return None
+        Y = np.transpose(np.array([y_tf]))
+        x = np.arange(number_of_points)
+        a = np.sum(Y)/np.sum(x)
+        return a
+
     def _linear_regression_algorithm(self):
         self.active_tdc = self.transfer_function_ideal.get_active_tdc()
         max_fine = self.transfer_function_ideal.get_max_fine()
@@ -94,6 +104,45 @@ class TransferFunctionICSSHSR4:
             median_step = self._get_median_step(raw_data[i])
             self.fine_period[i] = np.around(median_step)  # The height of the median step seems to be a good approximation.
             self.coarse_period[i] = np.around(ps_per_coarse[i])
+        self._compute_transfer_function_y(x)
+
+    def _linear_regression_algorithm2(self):
+        self.active_tdc = self.transfer_function_ideal.get_active_tdc()
+        max_fine = self.transfer_function_ideal.get_max_fine()
+        max_coarse = self.transfer_function_ideal.get_max_coarse()
+        [x, raw_data] = self.transfer_function_ideal.get_transfer_functions_raw_data()
+
+        self.coarse_period = np.zeros(NUMBER_OF_TDC)
+        self.coarse_lookup_table = np.zeros((NUMBER_OF_TDC, 2**4))
+        self.fine_period = np.zeros(NUMBER_OF_TDC)
+        for tdc in range(NUMBER_OF_TDC):
+            if tdc not in self.active_tdc:
+                continue
+            # Do a linear regression for every coarse, then average it
+            slopes = []
+            bias = []
+            for coarse in range(max_coarse[tdc]):
+                number_of_fine = max_fine[tdc]
+                current_data = raw_data[tdc][coarse*number_of_fine:(coarse+1)*number_of_fine]
+                parameters = self._linear_regression(current_data)
+                if parameters is None:
+                    continue
+                a = parameters[0]
+                b = parameters[1]
+                slopes.append(a)
+                bias.append(b)
+            average_slope = np.around(np.average(np.array(slopes)) * 16) / 16
+
+            #parameters = self._linear_regression(raw_data[tdc])
+            #if parameters is None:
+            #    continue
+            #a = parameters[0]
+            #b = parameters[1]
+            #print("Bias = " + str(b))
+            a = self.linear_regression_force_origin(raw_data[tdc])
+            self.fine_period[tdc] = average_slope
+            self.coarse_period[tdc] = np.around(a*max_fine[tdc])
+
         self._compute_transfer_function_y(x)
 
     def _compute_transfer_function_y(self, x):
