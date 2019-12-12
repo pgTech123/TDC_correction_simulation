@@ -15,8 +15,6 @@ class TransferFunctionICYSHSR1:
             self._lookup_table_coarse()
         elif algorithm == "lookup_and_fine_correction":
             self._lookup_table_coarse(with_correction_on_fine=True)
-        elif algorithm == "lookup_last_and_fine_correction":
-            self._lookup_table_coarse(with_correction_on_fine=True, lookup_table_for_last=True)
         else:
             raise Exception("Invalid algorithm")
 
@@ -35,9 +33,6 @@ class TransferFunctionICYSHSR1:
         return [copy.deepcopy(self.x), copy.deepcopy(self.y_tf)]
 
     def evaluate(self, coarse, fine, tdc):
-        #correction_lookup = 0
-        #if self.lookup_table_last_code[tdc][0] == fine:
-        #    correction_lookup = self.lookup_table_last_code[tdc][1]
         return coarse * self.coarse_period[tdc] + self.coarse_lookup_table[tdc, coarse] + \
                fine * (self.fine_period[tdc] + self.fine_slope_corr_lookup_table[tdc][coarse])
 
@@ -74,7 +69,7 @@ class TransferFunctionICYSHSR1:
             slopes.append(a)
         return slopes
 
-    def _lookup_table_coarse(self, with_correction_on_fine=False, lookup_table_for_last=True):
+    def _lookup_table_coarse(self, with_correction_on_fine=False):
         self.active_tdc = self.transfer_function_ideal.get_active_tdc()
         max_fine = self.transfer_function_ideal.get_max_fine()
         max_coarse = self.transfer_function_ideal.get_max_coarse()
@@ -104,8 +99,6 @@ class TransferFunctionICYSHSR1:
             b = parameters[1]
             self.coarse_period[tdc] = np.around(a*max_fine[tdc] * 8) / 8    # Apply the same resolution as in the chip
             self._fill_lookup_table_coarse(raw_data[tdc], tdc, max_fine, max_coarse)
-            if lookup_table_for_last:
-                self._fill_lookup_table_last_fine(raw_data[tdc], tdc, max_fine, max_coarse)
 
         self._compute_transfer_function_y(x)
 
@@ -122,20 +115,6 @@ class TransferFunctionICYSHSR1:
             average = np.average(np.array(difference))
             #print(difference)
             self.coarse_lookup_table[tdc, coarse] = round(average)
-
-    def _fill_lookup_table_last_fine(self, y_tf, tdc, max_fine, max_coarse):
-        if max_coarse[tdc] == 0:
-            return
-        difference = []
-        for coarse in range(max_coarse[tdc] + 1):
-            coarse_len = max_fine[tdc]
-            cur_coarse_data_ideal = y_tf[coarse * coarse_len:(coarse + 1) * coarse_len - 1]
-            difference.append(cur_coarse_data_ideal[-1] - self.evaluate(coarse, max_fine[tdc], tdc))
-        average = np.average(np.array(difference))
-        self.lookup_table_last_code[tdc][0] = max_fine[tdc] - 1
-        self.lookup_table_last_code[tdc][1] = np.around(-average)
-        #print(self.lookup_table_last_code[tdc])
-
 
 
     def _fill_correction_table_for_fine_slope(self, tdc, slopes):
