@@ -7,6 +7,19 @@ from transfer_function_ICSSHSR4 import TransferFunctionICSSHSR4
 from transfer_function_ICYSHSR1 import TransferFunctionICYSHSR1
 
 TDC_VISUALIZED = 6
+TOTAL_PERIOD = 4000
+
+
+def print_stats(target_graph, ideal_graph, name):
+    diff = ideal_graph-target_graph
+    min_diff = min(diff)
+    max_diff = max(diff)
+
+    print("Error range on correction for " + str(name) + ": " + str(max_diff - min_diff) +
+          ", max=" + str(max_diff) + ", min=" + str(min_diff))
+    print("Stddev for " + str(name) + ": " + str(np.std(diff)))
+
+
 
 def main():
     filename = "./../data/Demo_Uncorrelated_coefficients_4.txt"
@@ -42,30 +55,17 @@ def main():
     plt.title("Error between the ideal transfer function and different correction algorithms")
     plt.legend()
 
-    # METRICS
-    min_ideal_icsshsr4_median = min(tf_graph_ideal[1][TDC_VISUALIZED]-tf_graph_icsshsr4_median[1][TDC_VISUALIZED])
-    max_ideal_icsshsr4_median = max(tf_graph_ideal[1][TDC_VISUALIZED]-tf_graph_icsshsr4_median[1][TDC_VISUALIZED])
+    print_stats(tf_graph_icsshsr4_median[1][TDC_VISUALIZED], tf_graph_ideal[1][TDC_VISUALIZED], "ICSSHSR4 median")
+    print_stats(tf_graph_icsshsr4_linear_reg[1][TDC_VISUALIZED], tf_graph_ideal[1][TDC_VISUALIZED], "ICSSHSR4 linear regression")
+    print_stats(tf_graph_icyshsr1[1][TDC_VISUALIZED], tf_graph_ideal[1][TDC_VISUALIZED], "ICYSHSR1")
+    print_stats(tf_graph_icyshsr1_better[1][TDC_VISUALIZED], tf_graph_ideal[1][TDC_VISUALIZED], "ICYSHSR1 better")
 
-    min_ideal_icsshsr4_linear_reg = min(tf_graph_ideal[1][TDC_VISUALIZED]-tf_graph_icsshsr4_linear_reg[1][TDC_VISUALIZED])
-    max_ideal_icsshsr4_linear_reg = max(tf_graph_ideal[1][TDC_VISUALIZED]-tf_graph_icsshsr4_linear_reg[1][TDC_VISUALIZED])
+    plt.figure()
+    histogram = tf_ideal.get_histograms()[TDC_VISUALIZED]
+    plt.bar(x=histogram[1][:-1], height=histogram[0])
 
-    min_ideal_icyshsr1 = min(tf_graph_ideal[1][TDC_VISUALIZED]-tf_graph_icyshsr1[1][TDC_VISUALIZED])
-    max_ideal_icyshsr1 = max(tf_graph_ideal[1][TDC_VISUALIZED]-tf_graph_icyshsr1[1][TDC_VISUALIZED])
-
-    min_ideal_icyshsr1_better = min(tf_graph_ideal[1][TDC_VISUALIZED]-tf_graph_icyshsr1_better[1][TDC_VISUALIZED])
-    max_ideal_icyshsr1_better = max(tf_graph_ideal[1][TDC_VISUALIZED]-tf_graph_icyshsr1_better[1][TDC_VISUALIZED])
-
-    print("Error range on correction for ICSSHSR4 median: " + str(max_ideal_icsshsr4_median - min_ideal_icsshsr4_median) + ", max=" + str(max_ideal_icsshsr4_median) + ", min=" + str(min_ideal_icsshsr4_median))
-    print("Error range on correction for ICSSHSR4 linear regression: " + str(max_ideal_icsshsr4_linear_reg - min_ideal_icsshsr4_linear_reg) + ", max=" + str(max_ideal_icsshsr4_linear_reg) + ", min=" + str(min_ideal_icsshsr4_linear_reg))
-    print("Error range on correction for ICYSHSR1: " + str(max_ideal_icyshsr1 - min_ideal_icyshsr1) + ", max=" + str(max_ideal_icyshsr1) + ", min=" + str(min_ideal_icyshsr1))
-    print("Error range on correction for ICYSHSR1 better: " + str(max_ideal_icyshsr1_better - min_ideal_icyshsr1_better) + ", max=" + str(max_ideal_icyshsr1_better) + ", min=" + str(min_ideal_icyshsr1_better))
-
-    #plt.figure()
-    #histogram = tf_ideal.get_histograms()[TDC_VISUALIZED]
-    #plt.bar(x=histogram[1][:-1], height=histogram[0])
-
-    #inl = tf_ideal.get_inl_data()
-    #dnl = tf_ideal.get_dnl_data()
+    inl = tf_ideal.get_inl_data()
+    dnl = tf_ideal.get_dnl_data()
 
     #plt.figure()
     #plt.plot(inl[0][TDC_VISUALIZED], inl[1][TDC_VISUALIZED])
