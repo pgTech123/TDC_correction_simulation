@@ -2,12 +2,12 @@
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-from transfer_function_ideal import TransferFunctionIdeal
+from ICYSHSR1_transfer_function_ideal import TransferFunctions
 from transfer_function_no_correction import TransferFunctionNoCorrections
 from transfer_function_ICSSHSR4 import TransferFunctionICSSHSR4
 from transfer_function_ICYSHSR1 import TransferFunctionICYSHSR1
 
-TDC_VISUALIZED = 2
+# TDC_VISUALIZED = 2
 TOTAL_PERIOD = 4000
 
 
@@ -23,9 +23,45 @@ def print_stats(target_graph, ideal_graph, name):
 
 
 def main():
-    # Last chip
-    filename = "./../data/Demo_Uncorrelated_coefficients_4.txt"
-    tf_ideal = TransferFunctionIdeal(filename=filename, tf_starts_at_origin=True)
+    # Current chip
+    filename = "./data/NON_CORR_TDC_mar3_single.hdf5"
+    #filename = "./data/NON_CORR_TDC_mar3_ALL.hdf5"
+
+    tf = TransferFunctions(filename=filename, basePath="CHARTIER/ASIC0/TDC/NON_CORR/FAST_255/SLOW_250/ARRAY_0/ADDR_13")
+
+    plt.figure()
+    plt.plot(tf.get_ideal(), 'k--',label="Fonction de transfert idéale")
+    plt.plot(tf.get_median(), 'g', label="Pente médiane")
+    plt.plot(tf.get_linear(), 'r', label="Régression linéaire")
+    plt.plot(tf.get_biased_linear(), 'b', label="ICSSHSRY Algorithm: Bias correction on each coarse")
+    plt.plot(tf.get_slope_corr_biased_linear(), 'm', label="ICSSHSRY Algorithm: Bias and slope correction on each coarse")
+    plt.xlabel("Code du CTN")
+    plt.ylabel("Temps depuis le dernier coup d'horloge (ps)")
+    plt.legend()
+
+    plt.figure()
+    plt.plot(range(len(tf.get_ideal())), np.zeros(len(tf.get_ideal())), 'k--', label="Idéal")
+    #plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_linear(), 'r', label="Régression linéaire")
+    #plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_median(), 'g', label="Pente médiane")
+    plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_biased_linear(), 'b', label="Correction du décallage pour chaque code grossier")
+    plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_slope_corr_biased_linear(), 'm', label="Correction du décallage et de la pente pour chaque code grossier")
+    # plt.title("Error between the ideal transfer function and different correction algorithms")
+    #plt.title("Erreur entre la fonction de transfert idéale et différents algorithmes de correction")
+    plt.xlabel("Code du CTN")
+    plt.ylabel("Temps depuis le dernier coup d'horloge (ps)")
+    plt.legend()
+
+    print_stats(tf.get_median(), tf.get_ideal(), "ICSSHSR4 median")
+    print_stats(tf.get_linear(), tf.get_ideal(), "ICSSHSR4 linear regression")
+    print_stats(tf.get_biased_linear(), tf.get_ideal(), "ICYSHSR1")
+    print_stats(tf.get_slope_corr_biased_linear(), tf.get_ideal(), "ICYSHSR1 better")
+
+    plt.show()
+
+
+
+
+"""
     tf_icsshsr4_median = TransferFunctionICSSHSR4(tf_ideal, algorithm="median")
     tf_icsshsr4_linear_reg = TransferFunctionICSSHSR4(tf_ideal, algorithm="linear_regression")
     tf_icyshsr1 = TransferFunctionICYSHSR1(tf_ideal, "lookup_coarse")
@@ -85,5 +121,5 @@ def main():
 
     plt.show()
 
-
+"""
 main()
