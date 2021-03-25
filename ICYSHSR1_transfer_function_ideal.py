@@ -70,6 +70,10 @@ class TransferFunctions:
     def get_slope_corr_biased_linear(self):
         return self.bias_slope_reg
 
+    def code_to_timestamp(self, coarse, fine):
+        index = np.sum(self.fine_by_coarse[:coarse]) + fine
+        return self.ideal_tf[index]
+
     #######################################################################
     #                      PRIVATE FUNCTIONS
     #       (These functions shouldn't be called from outside)
