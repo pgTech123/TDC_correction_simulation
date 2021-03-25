@@ -24,25 +24,27 @@ def print_stats(target_graph, ideal_graph, name):
 
 def main():
     # Current chip
-    filename = "./data/NON_CORR_TDC_mar3_single.hdf5"
-    #filename = "./data/NON_CORR_TDC_mar3_ALL.hdf5"
+    #filename = "./data/NON_CORR_TDC_mar3_single.hdf5"
+    filename = "./data/NON_CORR_TDC_mar3_ALL.hdf5"
 
-    tf = TransferFunctions(filename=filename, basePath="CHARTIER/ASIC0/TDC/NON_CORR/FAST_255/SLOW_250/ARRAY_0/ADDR_13")
+    tf = TransferFunctions(filename=filename, basePath="CHARTIER/ASIC0/TDC/NON_CORR/FAST_255/SLOW_250/ARRAY_0", pixel_id=52)
+    #tf = TransferFunctions(filename=filename, basePath="CHARTIER/ASIC0/TDC/NON_CORR/FAST_255/SLOW_250/ARRAY_0/ADDR_13", pixel_id=52)
 
+    plt.plot(tf.density_code)
     plt.figure()
     plt.plot(tf.get_ideal(), 'k--',label="Fonction de transfert idéale")
-    plt.plot(tf.get_median(), 'g', label="Pente médiane")
-    plt.plot(tf.get_linear(), 'r', label="Régression linéaire")
-    plt.plot(tf.get_biased_linear(), 'b', label="ICSSHSRY Algorithm: Bias correction on each coarse")
-    plt.plot(tf.get_slope_corr_biased_linear(), 'm', label="ICSSHSRY Algorithm: Bias and slope correction on each coarse")
+    #plt.plot(tf.get_median(), 'g', label="Pente médiane")
+    #plt.plot(tf.get_linear(), 'r', label="Régression linéaire")
+    #plt.plot(tf.get_biased_linear(), 'b', label="ICSSHSRY Algorithm: Bias correction on each coarse")
+    #plt.plot(tf.get_slope_corr_biased_linear(), 'm', label="ICSSHSRY Algorithm: Bias and slope correction on each coarse")
     plt.xlabel("Code du CTN")
     plt.ylabel("Temps depuis le dernier coup d'horloge (ps)")
     plt.legend()
 
     plt.figure()
     plt.plot(range(len(tf.get_ideal())), np.zeros(len(tf.get_ideal())), 'k--', label="Idéal")
-    #plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_linear(), 'r', label="Régression linéaire")
-    #plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_median(), 'g', label="Pente médiane")
+    plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_linear(), 'r', label="Régression linéaire")
+    plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_median(), 'g', label="Pente médiane")
     plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_biased_linear(), 'b', label="Correction du décallage pour chaque code grossier")
     plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_slope_corr_biased_linear(), 'm', label="Correction du décallage et de la pente pour chaque code grossier")
     # plt.title("Error between the ideal transfer function and different correction algorithms")
