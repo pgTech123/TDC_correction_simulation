@@ -28,20 +28,20 @@ def main():
     # ARR 1
     #filename = "./data/ARR1/NON_CORR_TEST_ALL-20210319-203909.hdf5"
 
-    tf = TransferFunctions(filename=filename, basePath="CHARTIER/ASIC0/MO/TDC/NON_CORR/ALL/FAST_255/SLOW_250/ARRAY_0", pixel_id=12)
+    tf = TransferFunctions(filename=filename, basePath="CHARTIER/ASIC0/MO/TDC/NON_CORR/ALL/FAST_255/SLOW_250/ARRAY_0", pixel_id=8, filter_lower_than=0.05)
     #tf = TransferFunctions(filename=filename, basePath="CHARTIER/ASIC0/TDC/NON_CORR/FAST_255/SLOW_250/ARRAY_0/ADDR_13", pixel_id=52)
 
-    plt.figure()
+    """plt.figure()
     plt.plot(tf.density_code)
     plt.xlabel("Code du CTN")
     plt.ylabel("Nombre de compte")
-
+    """
     plt.figure()
     plt.plot(tf.get_ideal(), 'k--',label="Fonction de transfert idéale")
     #plt.plot(tf.get_median(), 'g', label="Pente médiane")
-    #plt.plot(tf.get_linear(), 'r', label="Régression linéaire")
-    #plt.plot(tf.get_biased_linear(), 'b', label="ICSSHSRY Algorithm: Bias correction on each coarse")
-    #plt.plot(tf.get_slope_corr_biased_linear(), 'm', label="ICSSHSRY Algorithm: Bias and slope correction on each coarse")
+    plt.plot(tf.get_linear(), 'r', label="Régression linéaire")
+    plt.plot(tf.get_biased_linear(), 'b', label="ICSSHSRY Algorithm: Bias correction on each coarse")
+    plt.plot(tf.get_slope_corr_biased_linear(), 'm', label="ICSSHSRY Algorithm: Bias and slope correction on each coarse")
     plt.xlabel("Code du CTN")
     plt.ylabel("Temps depuis le dernier coup d'horloge (ps)")
     plt.legend()
