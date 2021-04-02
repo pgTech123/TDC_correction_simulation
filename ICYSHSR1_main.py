@@ -15,20 +15,22 @@ def print_stats(target_graph, ideal_graph, name):
     diff = ideal_graph-target_graph
     min_diff = min(diff)
     max_diff = max(diff)
+    lsb = 4000 / len(ideal_graph)
 
     print("Error range on correction for " + str(name) + ": " + str(max_diff - min_diff) +
           ", max=" + str(max_diff) + ", min=" + str(min_diff))
     print("Stddev for " + str(name) + ": " + str(np.std(diff)))
+    print("LSB " + str(lsb))
 
 
 
 def main():
     # ARR 0
-    filename = "/media/pascal/Files/Maitrise/ICYSHSR1/Data/ARR0/NON_CORR_TEST_ALL-20210322-210304.hdf5"
+    filename = "./data/ARR0/NON_CORR_TEST_ALL-20210322-210304.hdf5"
     # ARR 1
     #filename = "./data/ARR1/NON_CORR_TEST_ALL-20210319-203909.hdf5"
 
-    tf = TransferFunctions(filename=filename, basePath="CHARTIER/ASIC0/MO/TDC/NON_CORR/ALL/FAST_255/SLOW_250/ARRAY_0", pixel_id=8, filter_lower_than=0.05)
+    tf = TransferFunctions(filename=filename, basePath="CHARTIER/ASIC0/MO/TDC/NON_CORR/ALL/FAST_255/SLOW_250/ARRAY_0", pixel_id=52, filter_lower_than=0.05)
     #tf = TransferFunctions(filename=filename, basePath="CHARTIER/ASIC0/TDC/NON_CORR/FAST_255/SLOW_250/ARRAY_0/ADDR_13", pixel_id=52)
 
     """plt.figure()
@@ -48,8 +50,8 @@ def main():
 
     plt.figure()
     plt.plot(range(len(tf.get_ideal())), np.zeros(len(tf.get_ideal())), 'k--', label="Idéal")
-    plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_linear(), 'r', label="Régression linéaire")
-    plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_median(), 'g', label="Pente médiane")
+    #plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_linear(), 'r', label="Régression linéaire")
+    #plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_median(), 'g', label="Pente médiane")
     plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_biased_linear(), 'b', label="Correction du décallage pour chaque code grossier")
     plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_slope_corr_biased_linear(), 'm', label="Correction du décallage et de la pente pour chaque code grossier")
     # plt.title("Error between the ideal transfer function and different correction algorithms")

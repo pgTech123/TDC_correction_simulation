@@ -30,9 +30,12 @@ class TransferFunctions:
         self.fine_slope_corr_lookup_table = np.zeros(2 ** 4)
 
         self.lin_reg = self._linear_regression_algorithm()
+        #elf.save_coefficients("linear")
         self.med_reg = self._median_algorithm()
         self.bias_reg = self._linear_regression_algorithm(True, False)
+        #self.save_coefficients("bias")
         self.bias_slope_reg = self._linear_regression_algorithm(True, True)
+        #self.save_coefficients("all")
 
     def get_density_code(self, filename, basePath, pixel_id, filter_lower_than):
         with h5py.File(filename, "r") as h:
@@ -75,6 +78,9 @@ class TransferFunctions:
     def code_to_timestamp(self, coarse, fine):
         index = np.sum(self.fine_by_coarse[:coarse]) + fine
         return self.ideal_tf[index]
+
+    def get_coefficients(self):
+        return self.coarse_period, self.fine_period, self.coarse_lookup_table, self.fine_slope_corr_lookup_table
 
     #######################################################################
     #                      PRIVATE FUNCTIONS
@@ -144,38 +150,39 @@ class TransferFunctions:
         parameters = self._linear_regression(coarse_mean_point)
         a = parameters[0]
         b = parameters[1]
+        bias_coarse = b
         self.global_bias = -b - a/2
         self.coarse_period = np.around(a * 8) / 8    # Apply the same resolution as in the chip
 
         offset=0
         for coarse in range(len(self.fine_by_coarse)):
             number_of_fine = self.fine_by_coarse[coarse]
-            current_data = self.ideal_tf[offset:offset+number_of_fine] - self.coarse_period * coarse
+            current_data = self.ideal_tf[offset:offset+number_of_fine]  # - self.coarse_period * coarse
             offset += number_of_fine
             #TODO
             #self.min_fine_by_coarse[coarse]
-            parameters = self._linear_regression(current_data[1:-1])
+            current_data = current_data[:-10]   # Remove outliers
+            parameters = self._linear_regression(current_data)
             if parameters is None:
                 continue
             a = parameters[0]
             b = parameters[1]
             slopes.append(a)
             bias.append(b)
+            #bias.append(np.mean(current_data))
 
+        bias_offset = 0
         if not lookup_slope:
             self.fine_period = np.around(np.average(np.array(slopes)) * 16) / 16
             #self.global_bias += np.average(bias)
         else:
-            self.fine_period = max(slopes)
+            self.fine_period = min(slopes)
             self._fill_correction_table_for_fine_slope(slopes)
 
         if lookup_bias:
-            self._fill_lookup_table_coarse(self.ideal_tf)
-            #self._fill_lookup_bias(bias)
+            self._fill_lookup_bias(bias, slopes)
+            #self._fill_lookup_table_coarse(self.ideal_tf)
 
-        #a = self.linear_regression_force_origin(self.ideal_tf)
-        #parameters = self._linear_regression(self.ideal_tf)
-        #self.coarse_period = np.mean(self.fine_by_coarse[:-1]) * parameters[0] #np.around(a*max(self.fine_by_coarse))
         return self._compute_transfer_function_y(range(len(self.ideal_tf)))
 
     def _compute_transfer_function_y(self, x):
@@ -193,25 +200,32 @@ class TransferFunctions:
         return coarse * self.coarse_period + self.coarse_lookup_table[coarse] + \
                (self.min_fine_by_coarse[coarse] + fine) * (self.fine_period + self.fine_slope_corr_lookup_table[coarse]) + self.min_coarse * self.global_bias
 
-    def _fill_lookup_bias(self, bias):
-        for coarse in range(len(self.fine_by_coarse)):
-            self.coarse_lookup_table[coarse] = round(bias[coarse])
-
+    def _fill_lookup_bias(self, bias, slopes):
+        for coarse in range(len(bias)):
+            offset = bias[coarse] - self.coarse_period * coarse
+            self.coarse_lookup_table[coarse+self.min_coarse] = round(offset)
 
     def _fill_lookup_table_coarse(self, y_tf):
+        self.coarse_lookup_table = np.zeros(2**4)
         offset = 0
         for coarse in range(len(self.fine_by_coarse)):
-            cur_coarse_data_ideal = y_tf[offset:offset+self.fine_by_coarse[coarse]]
+            cur_coarse_data_ideal = y_tf[offset:offset + self.fine_by_coarse[coarse]]
             offset += self.fine_by_coarse[coarse]
             # Get average offset between approx and real
             difference = []
             for fine, ideal_value in zip(range(len(cur_coarse_data_ideal)), cur_coarse_data_ideal):
-                difference.append(ideal_value - self.evaluate(coarse, fine))
-            average = np.average(np.array(difference))
-            #print(difference)
+                difference.append(ideal_value - self.evaluate(coarse, fine+self.min_fine_by_coarse[coarse]))
+            average = np.median(np.array(difference))
+            print(len(difference))
             self.coarse_lookup_table[coarse] = min(round(average), 256)
 
     def _fill_correction_table_for_fine_slope(self, slopes):
         for i in range(len(slopes)):
             diff = slopes[i] - self.fine_period
-            self.fine_slope_corr_lookup_table[i+1] = min(((np.around(diff)/16) * 16), 1)
+            self.fine_slope_corr_lookup_table[i+self.min_coarse] = np.around(diff*16)/16
+
+    def save_coefficients(self, filename):
+        np.save(filename+"coarse.npy", self.coarse_period)
+        np.save(filename+"fine.npy", self.fine_period)
+        np.save(filename+"bias.npy", self.coarse_lookup_table)
+        np.save(filename+"slope.npy", self.fine_slope_corr_lookup_table)
