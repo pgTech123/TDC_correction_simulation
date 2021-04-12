@@ -1,3 +1,4 @@
+import math
 import h5py
 import numpy as np
 
@@ -17,13 +18,13 @@ class TransferFunctions:
         self.density_code, self.fine_by_coarse, self.min_fine_by_coarse, self.min_coarse = self.get_density_code(filename, basePath, pixel_id, filter_lower_than)
         self.number_of_coarse = len(self.fine_by_coarse)
 
-        print(self.min_coarse)
-        print(self.min_fine_by_coarse)
+        #print(self.min_coarse)
+        #print(self.min_fine_by_coarse)
         ps_per_count = PERIOD_IN_PS / np.sum(self.density_code)
         time_per_code = self.density_code * ps_per_count
         self.ps_per_coarse = PERIOD_IN_PS / (np.sum(self.fine_by_coarse) / np.mean(self.fine_by_coarse[:-1]))   # Last coarse smaller so remove it from mean
         self.ideal_tf = np.cumsum(time_per_code)
-        print(len(self.ideal_tf))
+        #print(len(self.ideal_tf))
         self.global_bias = 0
 
         self.coarse_lookup_table = np.zeros(2**4)
@@ -151,7 +152,7 @@ class TransferFunctions:
         a = parameters[0]
         b = parameters[1]
         bias_coarse = b
-        self.global_bias = -b - a/2
+        self.global_bias = 0    # -b - self.min_coarse * a/2
         self.coarse_period = np.around(a * 8) / 8    # Apply the same resolution as in the chip
 
         offset=0
@@ -161,7 +162,7 @@ class TransferFunctions:
             offset += number_of_fine
             #TODO
             #self.min_fine_by_coarse[coarse]
-            current_data = current_data[:-10]   # Remove outliers
+            current_data = current_data[:-(math.floor(len(current_data)/8))]   # Remove outliers
             parameters = self._linear_regression(current_data)
             if parameters is None:
                 continue
@@ -180,8 +181,8 @@ class TransferFunctions:
             self._fill_correction_table_for_fine_slope(slopes)
 
         if lookup_bias:
-            self._fill_lookup_bias(bias, slopes)
-            #self._fill_lookup_table_coarse(self.ideal_tf)
+            #self._fill_lookup_bias(bias, slopes)
+            self._fill_lookup_table_coarse(self.ideal_tf)
 
         return self._compute_transfer_function_y(range(len(self.ideal_tf)))
 
@@ -189,16 +190,16 @@ class TransferFunctions:
         y_estimated = []
         # Iterate all coarse
         coarse = 0
-        for number_of_fine in self.fine_by_coarse:
+        for number_of_fine, min_fine in zip(self.fine_by_coarse, self.min_fine_by_coarse):
             for fine in range(number_of_fine):
-                estimated_time = self.evaluate(coarse, fine)
+                estimated_time = self.evaluate(coarse+self.min_coarse, fine+min_fine)
                 y_estimated.append(estimated_time)
             coarse += 1
         return y_estimated
 
     def evaluate(self, coarse, fine):
         return coarse * self.coarse_period + self.coarse_lookup_table[coarse] + \
-               (self.min_fine_by_coarse[coarse] + fine) * (self.fine_period + self.fine_slope_corr_lookup_table[coarse]) + self.min_coarse * self.global_bias
+               fine * (self.fine_period + self.fine_slope_corr_lookup_table[coarse]) + self.global_bias
 
     def _fill_lookup_bias(self, bias, slopes):
         for coarse in range(len(bias)):
@@ -214,10 +215,10 @@ class TransferFunctions:
             # Get average offset between approx and real
             difference = []
             for fine, ideal_value in zip(range(len(cur_coarse_data_ideal)), cur_coarse_data_ideal):
-                difference.append(ideal_value - self.evaluate(coarse, fine+self.min_fine_by_coarse[coarse]))
-            average = np.median(np.array(difference))
-            print(len(difference))
-            self.coarse_lookup_table[coarse] = min(round(average), 256)
+                difference.append(ideal_value - self.evaluate(coarse+self.min_coarse, fine+self.min_fine_by_coarse[coarse]))
+            average = np.mean(np.array(difference))
+            #print(len(difference))
+            self.coarse_lookup_table[coarse+self.min_coarse] = min(round(average), 256)
 
     def _fill_correction_table_for_fine_slope(self, slopes):
         for i in range(len(slopes)):

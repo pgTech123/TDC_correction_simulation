@@ -30,7 +30,7 @@ def main():
     # ARR 1
     #filename = "./data/ARR1/NON_CORR_TEST_ALL-20210319-203909.hdf5"
 
-    tf = TransferFunctions(filename=filename, basePath="CHARTIER/ASIC0/MO/TDC/NON_CORR/ALL/FAST_255/SLOW_250/ARRAY_0", pixel_id=52, filter_lower_than=0.05)
+    tf = TransferFunctions(filename=filename, basePath="CHARTIER/ASIC0/MO/TDC/NON_CORR/ALL/FAST_255/SLOW_250/ARRAY_0", pixel_id=48, filter_lower_than=0.05)
     #tf = TransferFunctions(filename=filename, basePath="CHARTIER/ASIC0/TDC/NON_CORR/FAST_255/SLOW_250/ARRAY_0/ADDR_13", pixel_id=52)
 
     """plt.figure()
@@ -43,14 +43,14 @@ def main():
     #plt.plot(tf.get_median(), 'g', label="Pente médiane")
     plt.plot(tf.get_linear(), 'r', label="Régression linéaire")
     plt.plot(tf.get_biased_linear(), 'b', label="ICSSHSRY Algorithm: Bias correction on each coarse")
-    plt.plot(tf.get_slope_corr_biased_linear(), 'm', label="ICSSHSRY Algorithm: Bias and slope correction on each coarse")
+    #plt.plot(tf.get_slope_corr_biased_linear(), 'm', label="ICSSHSRY Algorithm: Bias and slope correction on each coarse")
     plt.xlabel("Code du CTN")
     plt.ylabel("Temps depuis le dernier coup d'horloge (ps)")
     plt.legend()
 
     plt.figure()
     plt.plot(range(len(tf.get_ideal())), np.zeros(len(tf.get_ideal())), 'k--', label="Idéal")
-    #plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_linear(), 'r', label="Régression linéaire")
+    plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_linear(), 'r', label="Régression linéaire")
     #plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_median(), 'g', label="Pente médiane")
     plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_biased_linear(), 'b', label="Correction du décallage pour chaque code grossier")
     plt.plot(range(len(tf.get_ideal())), tf.get_ideal()-tf.get_slope_corr_biased_linear(), 'm', label="Correction du décallage et de la pente pour chaque code grossier")
