@@ -12,8 +12,10 @@ with open('ratioLSB.pickle', 'rb') as f:
     ratio_arr = np.zeros((tdc_x, tdc_y))
     fig, ax = plt.subplots()
 
+    ratios = ratios[1]
+    print(ratios)
 
-    for tdc_id in ratios:
+    for tdc_id in range(len(ratios)):
         i_tdc_id = int(tdc_id)
         i = int(i_tdc_id/tdc_y)
         j = int(i_tdc_id % tdc_x)
@@ -23,6 +25,6 @@ with open('ratioLSB.pickle', 'rb') as f:
 
     im = ax.imshow(ratio_arr)
 
-    ax.set_title("Heatmap de la meilleure correction par rapport au LSB")
+    ax.set_title("Heatmap de la résolution après correction par CTN")
     fig.tight_layout()
     plt.show()

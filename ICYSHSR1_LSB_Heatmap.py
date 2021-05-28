@@ -17,16 +17,21 @@ def main():
     filename = "./data/ARR0/NON_CORR_TEST_ALL-20210322-210304.hdf5"
     # ARR 1
     #filename = "./data/ARR1/NON_CORR_TEST_ALL-20210319-203909.hdf5"
-    ratios = {}
+    lsb = []
+    res = []
     for i in range(49):
         tf = TransferFunctions(filename=filename, basePath="CHARTIER/ASIC0/MO/TDC/NON_CORR/ALL/FAST_255/SLOW_250/ARRAY_0", pixel_id=i*4, filter_lower_than=0.05)
-        lsb = 4000 / len(tf.ideal_tf)
+        cur_lsb = 4000 / len(tf.ideal_tf)
         corr_resolution = np.std(tf.get_ideal() - tf.get_slope_corr_biased_linear())
-        ratio = corr_resolution / lsb
-        ratios[i] = ratio
-        print("TDC " + str(i) + " ratio " + str(ratio))
-    print(ratios)
+        lsb.append(cur_lsb)
+        res.append(corr_resolution)
+        print(cur_lsb)
+        print(corr_resolution)
+
+        #print("TDC " + str(i) + " ratio " + str(ratio))
+    print(lsb)
+    print(res)
     with open('ratioLSB.pickle', 'wb') as f:
-        pickle.dump(ratios, f)
+        pickle.dump([lsb, res], f)
 
 main()

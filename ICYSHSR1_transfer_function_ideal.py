@@ -30,12 +30,12 @@ class TransferFunctions:
         self.coarse_lookup_table = np.zeros(2**4)
         self.fine_slope_corr_lookup_table = np.zeros(2 ** 4)
 
-        self.lin_reg = self._linear_regression_algorithm()
+        self.lin_reg = self.linear_regression_algorithm()
         #elf.save_coefficients("linear")
         self.med_reg = self._median_algorithm()
-        self.bias_reg = self._linear_regression_algorithm(True, False)
+        self.bias_reg = self.linear_regression_algorithm(True, False)
         #self.save_coefficients("bias")
-        self.bias_slope_reg = self._linear_regression_algorithm(True, True)
+        self.bias_slope_reg = self.linear_regression_algorithm(True, True)
         #self.save_coefficients("all")
 
     def get_density_code(self, filename, basePath, pixel_id, filter_lower_than):
@@ -53,7 +53,7 @@ class TransferFunctions:
             fine = fine[addr_filter]
 
             H, xedges, yedges = np.histogram2d(coarse, fine, [max(coarse), max(fine)],
-                                               range=[[0, max(coarse)], [0, max(fine)]])
+                                               range=[[0, max(coarse)+1], [0, max(fine)+1]])
             # Filter out
             min_fine_by_coarse = np.argmax(~(H < (np.amax(H) * filter_lower_than)), axis=1)
             fine_by_coarse = np.sum(~(H < (np.amax(H) * filter_lower_than)), axis=1)
@@ -125,7 +125,7 @@ class TransferFunctions:
         self.coarse_period = np.around(self.ps_per_coarse)
         return self._compute_transfer_function_y(range(len(self.ideal_tf)))
 
-    def _linear_regression_algorithm(self, lookup_bias=False, lookup_slope=False):
+    def linear_regression_algorithm(self, lookup_bias=False, lookup_slope=False):
         self.coarse_lookup_table = np.zeros(2**4)
         self.fine_slope_corr_lookup_table = np.zeros(2 ** 4)
         # Do a linear regression for every coarse, then average it
