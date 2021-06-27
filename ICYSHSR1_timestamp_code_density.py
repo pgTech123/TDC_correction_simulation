@@ -54,7 +54,10 @@ def curveFitting(diff, title):
 def main():
     # ARR 0
     # Fichier Pascal
-    filename = "./data/ARR0/TDC_M0_NON_CORR_TIME_All-20210519-164944.hdf5"
+    filename = "./data/ARR0/TDC_M0_NON_CORR_TIME_All-20210604-140203.hdf5"
+    filename = "./data/ARR0/TIME_ALL_CORR/TDC_M0_NON_CORR_TIME_All-20210519-140903.hdf5"
+    #filename = "./data/ARR0/TIME_CORR_ICSSHSR5/TDC_M0_NON_CORR_TIME_All-20210519-154704.hdf5"
+    #filename = "./data/ARR0/TIME_CORR_BIAS_ONLY/TDC_M0_NON_CORR_TIME_All-20210612-212231.hdf5"
     path = "CHARTIER/ASIC0/TDC/M0/ALL_TDC_ACTIVE/PLL/FAST_255/SLOW_250/NON_CORR/EXT/ADDR_ALL/RAW"
 
     with h5py.File(filename, "r") as h:
@@ -78,7 +81,7 @@ def main():
         print(energy)
         print(len(timestamp))
         print(diff)
-        curveFitting(diff, "Différence entre l'étampe de temps mesurée du CTN 4 et 8")
+        curveFitting(diff, "")
 
         plt.show()
 

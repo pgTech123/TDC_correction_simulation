@@ -5,12 +5,13 @@ import numpy as np
 
 
 def main():
-    filename = "./data/Window/Window_Size_Experiment-20210528-011951.hdf5"
+    filename = "./data/Window/GOOD240-255Window_Size_Experiment-20210614-194945.hdf5"
     path1 = "CHARTIER/ASIC0/TDC/M0/ALL_TDC_ACTIVE/PLL/FAST_"
     path2 = "/SLOW_"
     path3 = "/WINDOW_LENGTH/EXT/ADDR_ALL/RAW"
 
-    window_length = 23
+    window_length = 245
+
     with h5py.File(filename, "r") as h:
         path = path1 + str(window_length)
         delays = h[path].keys()
@@ -21,6 +22,7 @@ def main():
             data = data[data != 0xAAAAAAABAAAAAAAB]
             data = data[data != 0]
             data = data[data != 327680]
+            data = data[data != 327681]
             if len(data) != 0:
                 print(delay_path)
 

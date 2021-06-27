@@ -1,12 +1,7 @@
 # coding=utf-8
-import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
 import pickle
 from ICYSHSR1_transfer_function_ideal import TransferFunctions
-from transfer_function_no_correction import TransferFunctionNoCorrections
-from transfer_function_ICSSHSR4 import TransferFunctionICSSHSR4
-from transfer_function_ICYSHSR1 import TransferFunctionICYSHSR1
+
 
 # TDC_VISUALIZED = 2
 TOTAL_PERIOD = 4000
@@ -15,6 +10,8 @@ TOTAL_PERIOD = 4000
 
 
 def main():
+    number_of_tdc = 49
+    out_filename_prefix = "20may_corr_coef"
     # ARR 0
     # Fichier 40 go
     #filename = "./data/ARR0/NON_CORR_TEST_ALL-20210322-210304.hdf5"
@@ -32,7 +29,7 @@ def main():
     coefficients_lin = {}
     coefficients_lin_bias = {}
     coefficients_lin_bias_slope = {}
-    for i in range(49):
+    for i in range(number_of_tdc):
         tf = TransferFunctions(filename=filename, basePath=path, pixel_id=i*4, filter_lower_than=0.05)
 
         tf.linear_regression_algorithm()
@@ -45,15 +42,15 @@ def main():
         coefficients_lin_bias_slope[i] = tf.get_coefficients()
 
     print(coefficients_lin)
-    with open('20may_corr_coef_lin.pickle', 'wb') as f:
+    with open(out_filename_prefix+'_lin.pickle', 'wb') as f:
         pickle.dump(coefficients_lin, f)
 
     print(coefficients_lin_bias)
-    with open('20may_corr_coef_lin_bias.pickle', 'wb') as f:
+    with open(out_filename_prefix+'_lin_bias.pickle', 'wb') as f:
         pickle.dump(coefficients_lin_bias, f)
 
     print(coefficients_lin_bias_slope)
-    with open('20may_corr_coef_lin_bias_slope.pickle', 'wb') as f:
+    with open(out_filename_prefix+'_lin_bias_slope.pickle', 'wb') as f:
         pickle.dump(coefficients_lin_bias_slope, f)
 
 main()

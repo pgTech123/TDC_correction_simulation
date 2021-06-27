@@ -8,7 +8,7 @@ class TransferFunction:
     def evaluate(self, fine, coarse, tdc):
         with open('20may_corr_coef_lin_bias_slope.pickle', 'rb') as f:
             coef = pickle.load(f)[tdc]
-            print(coef)
+            #print(coef)
             coarse_time = coef[0]
             fine_time = coef[1]
             offset = coef[2]
