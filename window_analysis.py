@@ -185,7 +185,7 @@ def window_shape_graph():
 
 
 def window_length_graph():
-    filename = "./data/Window/GOOD-23-94-Window_Size_Experiment-20210528-211505.hdf5"
+    filename = "./data/Window/GOOD_ALL_127-128-Window_Size_Experiment-20210609-150059.hdf5"
     win_code, actual_len = read_window_len(filename, 71)
     print(actual_len)
     print(actual_len.shape)
@@ -205,5 +205,5 @@ def get_threshold_value():
 
 
 #window_shape_graph()
-#window_length_graph()
-get_threshold_value()
+window_length_graph()
+#get_threshold_value()
