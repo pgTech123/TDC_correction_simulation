@@ -212,7 +212,7 @@ def window_length_graph():
 def get_threshold_value():
     """Used for long window"""
     filename = "./data/Window/GOOD-189-228-Window_Size_Experiment-20210612-222122.hdf5"
-    win_code, actual_len, _ = read_window_len(filename, 9, one_threshold=True, flip=True)
+    win_code, actual_len, _ = read_window_len(filename, 20, one_threshold=True, flip=True)
     print(actual_len)
     print(actual_len - 1268)
 
@@ -240,5 +240,5 @@ def get_skew_graph():
 
 #window_shape_graph()
 #window_length_graph()
-#get_threshold_value()
-get_skew_graph()
+get_threshold_value()
+#get_skew_graph()

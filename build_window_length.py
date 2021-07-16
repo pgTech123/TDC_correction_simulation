@@ -55,9 +55,50 @@ length_155_188 = [4213.2244898,  4206.05612245, 4213.35204082, 4211.79591837,
 
 length_189_197 = []
 
-lengths = length_1_23 + length_24_93 + length_94_126 + length_127_128 + length_129_154 + length_155_188
+lengths = length_1_23 + length_24_93 + length_94_126 + length_127_128 #+ length_129_154 + length_155_188
 
-plt.plot(np.arange(1, 189), np.array(lengths))
+
+def get_bit_weight(data, bit):
+    bit_val = 1 << bit
+    jump = bit_val + 1
+    val1_index = []
+    val2_index = []
+    for i in range(len(data)):
+        if i % (bit_val*2) == 0:
+            val1_index += range(i, i + bit_val)
+            val2_index += range(i + bit_val, i + 2 *bit_val)
+    # Since we don't have value 0
+    val1_index = val1_index[1:]
+    val2_index = val2_index[1:]
+    diff = []
+    for i1, i2 in zip(val1_index, val2_index):
+        if i2 > len(data):
+            continue
+        diff.append(data[i2] - data[i1])
+    diff_np = np.array(diff)
+    diff_np = diff_np[diff_np!=0]
+    return np.mean(np.array(diff_np))
+
+
+for i in range(1, 8):
+    bit_val = get_bit_weight(lengths, i)
+    print("Bit " + str(i) + " = " + str(bit_val))
+
+print(get_bit_weight(lengths, 2))
+#get_bit_weight(lengths, 2)
+#get_bit_weight(lengths, 3)
+
+# Get bit weight
+bit0 = np.median(np.array(lengths[2::2]) - np.array(lengths[1::2])[:-1])
+bit1 = np.median(np.array(lengths[5::4]) - np.array(lengths[3::4])[:-1])
+bit2 = np.median(np.array(lengths[6::4]) - np.array(lengths[0::4])[:-1])
+print("Bit 0 = " + str(bit0))
+print("Bit 1 = " + str(bit1))
+print("Bit 2 = " + str(bit2))
+
+#print(np.median(np.diff(lengths)))
+
+plt.plot(np.arange(1, 129), np.array(lengths))
 # plt.title("Durée réelle de la fenêtre en fonction du code.")
 plt.xlabel('Configuration de durée de la fenêtre')
 plt.ylabel('Durée réelle de la fenêtre (ps)')
