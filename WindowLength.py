@@ -5,12 +5,12 @@ import numpy as np
 
 
 def main():
-    filename = "./data/Window/GOOD240-255Window_Size_Experiment-20210614-194945.hdf5"
+    filename = "./data/Window/GOOD_ALL_127-128-Window_Size_Experiment-20210609-150059.hdf5"
     path1 = "CHARTIER/ASIC0/TDC/M0/ALL_TDC_ACTIVE/PLL/FAST_"
     path2 = "/SLOW_"
     path3 = "/WINDOW_LENGTH/EXT/ADDR_ALL/RAW"
 
-    window_length = 245
+    window_length = 128
 
     with h5py.File(filename, "r") as h:
         path = path1 + str(window_length)

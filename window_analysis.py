@@ -46,7 +46,8 @@ def read_counts(data):
                 if pixel_index >= total_pixels:
                     continue
                 count = (int(packet) >> (8 * offset)) & 0xFF
-                counts[entry_index, pixel_index] = count
+                if entry_index < tot_entry:
+                    counts[entry_index, pixel_index] = count
             index += 1
     # Remove zero counts
     return counts[~np.all(counts == 0, axis=1)]
@@ -56,9 +57,11 @@ def get_average_counts(counts):
     return np.average(counts, axis=0)
 
 
-def get_window_len(avg_counts, x, approx_with_x=True, one_threshold=False):
+def get_window_len(avg_counts, x, approx_with_x=True, one_threshold=False, flip=False):
     threshold = np.amax(avg_counts, axis=0)/20
     above_threshold = avg_counts > threshold
+    if flip:
+        above_threshold = np.flip(above_threshold, axis=0)
     # Index non zero
     if approx_with_x:
         start_index = np.argmax(above_threshold, axis=0)
@@ -86,11 +89,13 @@ def delay_path_to_actual_delay(path_del):
     return actual_delay
 
 
-def read_window_len(filename, max_win=9, one_threshold=False):
+def read_window_len(filename, max_win=9, one_threshold=False, flip=False):
     path1 = "CHARTIER/ASIC0/TDC/M0/ALL_TDC_ACTIVE/PLL"
+    #path1 = "CHARTIER/ASIC0/TDC/M1/ALL_TDC_ACTIVE/PLL"
     path2 = "/SLOW_"
     path3 = "/WINDOW_LENGTH/EXT/ADDR_ALL/RAW"
     window_graph = []
+    start_delay = []
     with h5py.File(filename, "r") as h:
         # Remove the FAST_ to get the window len
         objList = list(h[path1].keys())
@@ -104,6 +109,10 @@ def read_window_len(filename, max_win=9, one_threshold=False):
             graph = []
             x = []
             for delay_path in delays:
+                actual_delay = delay_path_to_actual_delay(delay_path)
+                # Uncomment when 2 windows in the data
+                # if actual_delay < 0:
+                #     continue
                 path = path1 + "/FAST_" + str(window) + "/" + delay_path + path3
                 data = np.array(h[path])
                 # Quickly ignore empty frames
@@ -119,7 +128,6 @@ def read_window_len(filename, max_win=9, one_threshold=False):
                 avg = get_average_counts(counts)
                 graph.append(avg)
 
-                actual_delay = delay_path_to_actual_delay(delay_path)
                 x.append(actual_delay)
 
             if len(graph) == 0:
@@ -128,19 +136,21 @@ def read_window_len(filename, max_win=9, one_threshold=False):
                 window_code.append(window)
                 continue
             avg_count = np.array(graph)
-            actual_window_len = get_window_len(avg_count, np.array(x), one_threshold=one_threshold)
+            actual_window_len = get_window_len(avg_count, np.array(x), one_threshold=one_threshold, flip=flip)
             window_graph.append(np.mean(actual_window_len))
             window_code.append(window)
-        return np.array(window_code), np.array(window_graph)
+            start_delay.append(np.array(actual_window_len))
+        return np.array(window_code), np.array(window_graph), np.array(start_delay)
 
 def window_shape_graph():
     fig, ax = plt.subplots()
-    filename = "./data/Window/GOOD-23-94-Window_Size_Experiment-20210528-211505.hdf5"
+    filename = "./data/Window/GOOD_ALL_127-128-Window_Size_Experiment-20210609-150059.hdf5"
     path1 = "CHARTIER/ASIC0/TDC/M0/ALL_TDC_ACTIVE/PLL/FAST_"
+    #path1 = "CHARTIER/ASIC0/TDC/M1/ALL_TDC_ACTIVE/PLL/FAST_"
     path2 = "/SLOW_"
     path3 = "/WINDOW_LENGTH/EXT/ADDR_ALL/RAW"
 
-    window_length = 94
+    window_length = 127
 
     pixels = np.zeros(side*side)
     pixels_del_begin = np.zeros(side*side)
@@ -151,6 +161,10 @@ def window_shape_graph():
         graph = []
         x = []
         for delay_path in delays:
+            actual_delay = delay_path_to_actual_delay(delay_path)
+            # Uncomment when multiple windows
+            # if actual_delay < 0:
+            #     continue
             path = path1 + str(window_length) + "/" + delay_path + path3
             data = np.array(h[path])
             # Quickly ignore empty frames
@@ -162,7 +176,6 @@ def window_shape_graph():
             if len(tmp) == 0:
                 continue
 
-            actual_delay = delay_path_to_actual_delay(delay_path)
             counts = read_counts(data)
             avg = get_average_counts(counts)
             graph.append(avg)
@@ -186,7 +199,7 @@ def window_shape_graph():
 
 def window_length_graph():
     filename = "./data/Window/GOOD_ALL_127-128-Window_Size_Experiment-20210609-150059.hdf5"
-    win_code, actual_len = read_window_len(filename, 71)
+    win_code, actual_len, _ = read_window_len(filename, 71)
     print(actual_len)
     print(actual_len.shape)
     plt.plot(win_code, actual_len)
@@ -198,12 +211,34 @@ def window_length_graph():
 
 def get_threshold_value():
     """Used for long window"""
-    filename = "./data/Window/GOOD-23-94-Window_Size_Experiment-20210528-211505.hdf5"
-    win_code, actual_len = read_window_len(filename, 79, one_threshold=True)
+    filename = "./data/Window/GOOD-189-228-Window_Size_Experiment-20210612-222122.hdf5"
+    win_code, actual_len, _ = read_window_len(filename, 9, one_threshold=True, flip=True)
     print(actual_len)
-    print(actual_len - -5163)
+    print(actual_len - 1268)
+
+
+def get_skew_graph():
+    filename = "./data/Window/GOOD_1-23_Window_Size_Experiment-20210528-011951.hdf5"
+    #filename = "./data/Window/Skew_petite_matrice_Window_Size_Experiment-20210603-022807.hdf5"
+    _, _, start_del = read_window_len(filename, 23, one_threshold=True, flip=True)
+    skew = []
+    for delay in start_del:
+        skew.append(delay - min(delay))
+
+    mean_skew = np.mean(np.array(skew), axis=0)
+    fig, ax = plt.subplots()
+
+    matrix = np.reshape(mean_skew, (side, side))
+    im = ax.imshow(matrix)
+
+    #ax.set_title("D/callage  entre la réception du signal de fenêtre pour les pixels de la matrice 8 x 8")
+    ax = sns.heatmap(matrix)
+
+    fig.tight_layout()
+    plt.show()
 
 
 #window_shape_graph()
-window_length_graph()
+#window_length_graph()
 #get_threshold_value()
+get_skew_graph()
