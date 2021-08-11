@@ -62,6 +62,9 @@ def get_window_len(avg_counts, x, approx_with_x=True, one_threshold=False, flip=
     above_threshold = avg_counts > threshold
     if flip:
         above_threshold = np.flip(above_threshold, axis=0)
+        x = np.flip(x)
+        #print(x)
+        #print(above_threshold)
     # Index non zero
     if approx_with_x:
         start_index = np.argmax(above_threshold, axis=0)
@@ -91,7 +94,8 @@ def delay_path_to_actual_delay(path_del):
 
 def read_window_len(filename, max_win=9, one_threshold=False, flip=False):
     path1 = "CHARTIER/ASIC0/TDC/M0/ALL_TDC_ACTIVE/PLL"
-    #path1 = "CHARTIER/ASIC0/TDC/M1/ALL_TDC_ACTIVE/PLL"
+    if array:
+        path1 = "CHARTIER/ASIC0/TDC/M1/ALL_TDC_ACTIVE/PLL"
     path2 = "/SLOW_"
     path3 = "/WINDOW_LENGTH/EXT/ADDR_ALL/RAW"
     window_graph = []
@@ -144,13 +148,13 @@ def read_window_len(filename, max_win=9, one_threshold=False, flip=False):
 
 def window_shape_graph():
     fig, ax = plt.subplots()
-    filename = "./data/Window/GOOD_ALL_127-128-Window_Size_Experiment-20210609-150059.hdf5"
+    filename = "./data/Window/good_228-255Window_Size_Experiment-20210613-233628.hdf5"
     path1 = "CHARTIER/ASIC0/TDC/M0/ALL_TDC_ACTIVE/PLL/FAST_"
     #path1 = "CHARTIER/ASIC0/TDC/M1/ALL_TDC_ACTIVE/PLL/FAST_"
     path2 = "/SLOW_"
     path3 = "/WINDOW_LENGTH/EXT/ADDR_ALL/RAW"
 
-    window_length = 127
+    window_length = 229
 
     pixels = np.zeros(side*side)
     pixels_del_begin = np.zeros(side*side)
@@ -211,15 +215,23 @@ def window_length_graph():
 
 def get_threshold_value():
     """Used for long window"""
-    filename = "./data/Window/GOOD-189-228-Window_Size_Experiment-20210612-222122.hdf5"
-    win_code, actual_len, _ = read_window_len(filename, 20, one_threshold=True, flip=True)
+    filename = "./data/Window/Good_94-126Window_Size_Experiment-20210601-191304.hdf5"
+    win_code, actual_len, _ = read_window_len(filename, 32, one_threshold=True, flip=True)
     print(actual_len)
-    print(actual_len - 1268)
+    #print(actual_len - 1268)   # 127 and above
+    print(actual_len - -5105)   # 94-126
+
+def get_beginning():
+    """Used for long window"""
+    filename = "./data/Window/DEBUT_TRAME_28_mai_weekendacq_Window_Size_Experiment-20210528-201827.hdf5"
+    _, _, start_del = read_window_len(filename, 1, one_threshold=True, flip=False)
+    print(start_del)
 
 
 def get_skew_graph():
     filename = "./data/Window/GOOD_1-23_Window_Size_Experiment-20210528-011951.hdf5"
-    #filename = "./data/Window/Skew_petite_matrice_Window_Size_Experiment-20210603-022807.hdf5"
+    if array:
+        filename = "./data/Window/Skew_petite_matrice_Window_Size_Experiment-20210603-022807.hdf5"
     _, _, start_del = read_window_len(filename, 23, one_threshold=True, flip=True)
     skew = []
     for delay in start_del:
@@ -240,5 +252,6 @@ def get_skew_graph():
 
 #window_shape_graph()
 #window_length_graph()
+#get_beginning()
 get_threshold_value()
 #get_skew_graph()
